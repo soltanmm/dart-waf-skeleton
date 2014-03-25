@@ -1,4 +1,6 @@
+import 'dart:html';
+
 void main()
 {
-  print("hello!");
+  querySelector("#exampleparagraph").text = 'hello, world!';
 }

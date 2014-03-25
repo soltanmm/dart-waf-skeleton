@@ -7,7 +7,10 @@ def configure(cnf):
 def build(bld):
     bld(
         features='dart',
-        source=['example.dart', 'example.html'],
+        source=bld.path.ant_glob('**/*.dart')
+            + bld.path.ant_glob('**/*.html')
+            + bld.path.ant_glob('**/*.css')
+            + bld.path.ant_glob('**/*.js'),
         target='example'
     )
     

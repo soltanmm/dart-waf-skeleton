@@ -11,7 +11,7 @@ def build(bld):
     pass
 def configure(cnf):
     """
-    Try to find all relevant dart tools or raise a :py:class:`waflib.Errors.ConfigurationError`.
+    Try to find all relevant dart tools.
     """
     cnf.find_program('dart', var='DART')
     cnf.find_program('dart2js', var='DART2JS')
@@ -42,35 +42,17 @@ def process_dart(self):
     self.outdir = self.path.make_node(self.target + '/').get_bld()
     self.outdir.mkdir()
 
-def compile_dart_file(self, node):
-    """
-    Compile a dart file to javascript.
-    """
-    out_source = node.change_ext('.dart.js')
-    tsk = self.create_task('dart2jstask')
-    tsk.set_inputs(node)
-    tsk.set_outputs(out_source)
-    self.jsfiles.add(out_source)
-class dart2jstask(Task.Task):
-    def run(self):
-        bld = self.generator.bld
-        env = bld.env
-        bld.exec_command('{dart2js} {i} -o {o}'.format(
-            dart2js=env['DART2JS'],
-            i=self.inputs[0].abspath(),
-            o=self.outputs[0].abspath()
-        ))
-        return 0
-
 @feature('dart')
 @after_method('process_dart')
 @before_method('apply_dart')
 def apply_dart2js(self):
     for dartfile in self.dartfiles:
-        compile_dart_file(self, dartfile)
+        jsfile = dartfile.change_ext('.dart.js')
+        self.create_task('dart2jstask', dartfile, jsfile)
+        self.jsfiles.add(jsfile)
 
 @feature('dart')
-@after_method('process_dart')
+@after_method('apply_dart2js')
 def apply_dart(self):
     """
     Copy over all source files (html, css, dart, js, etc.) to the target
@@ -81,9 +63,26 @@ def apply_dart(self):
         files = getattr(self, filetype)
         for f in files:
             if f.is_bld():
-                fnode = self.outdir.make_node(f.path_from(self.path.get_bld()))
+                outf = self.outdir.make_node(f.path_from(self.path.get_bld()))
             elif f.is_src():
-                fnode = self.outdir.make_node(f.path_from(self.path.get_src()))
+                outf = self.outdir.make_node(f.path_from(self.path.get_src()))
             else:
                 raise Exception("I don't know what I'm doing anymore.")
-            shutil.copyfile(f.abspath(), fnode.abspath())
+            self.create_task('copytask',f,outf)
+
+class dart2jstask(Task.Task):
+    def run(self):
+        bld = self.generator.bld
+        env = bld.env
+        bld.exec_command('{dart2js} {i} -o {o}'.format(
+            dart2js=env['DART2JS'],
+            i=self.inputs[0].abspath(),
+            o=self.outputs[0].abspath()
+        ))
+        return 0
+class copytask(Task.Task):
+    def run(self):
+        i = self.inputs[0]
+        for o in self.outputs:
+            shutil.copyfile(i.abspath(), o.abspath())
+
