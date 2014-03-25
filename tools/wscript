@@ -13,7 +13,10 @@ def configure(cnf):
     """
     Try to find all relevant dart tools.
     """
-    cnf.find_program('dart', var='DART')
+    try:
+        cnf.find_program('dart', var='DART')
+    except:
+        Logs.warn("Couldn't find dart executable. It isn't necessary, but why don't you have it...?")
     cnf.find_program('dart2js', var='DART2JS')
     cnf.env['DART_JS_BOOTSTRAP'] = cnf.path.find_node('dart.js').abspath()
 
@@ -29,7 +32,10 @@ def process_dart(self):
     self.htmlfiles = set()
     self.cssfiles = set()
     for src in self.source:
-        node = self.path.find_node(src)
+        if isinstance(src,str):
+            node = self.path.find_node(src)
+        else:
+            node = src
         if node.suffix() == '.dart':
             self.dartfiles.add(node)
         elif node.suffix() == '.js':
