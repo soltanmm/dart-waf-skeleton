@@ -1,0 +1,14 @@
+# vim: syntax=python:shiftwidth=4:tabstop=4:expandtab
+
+def options(opt):
+    pass
+def configure(cnf):
+    pass
+def build(bld):
+    bld(
+        features='dart',
+        source=['example.dart', 'example.html'],
+        target='example'
+    )
+    
+

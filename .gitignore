@@ -1,0 +1,5 @@
+.waf*
+.lock*
+*.swo
+*.swp
+build/
