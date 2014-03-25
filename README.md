@@ -24,6 +24,6 @@ really need to be handled.
 Depending on how you want to roll, you can either drop dart packages into the
 `/packages/` folder, or specify them in `pubspec.yaml` and use `pub`. Indicate
 to the rest of the system your choice in `/wscript`. You may also want to
-update `/.gitignore` to include `packages/*` if you use pub, so that
+update `/.gitignore` to include `packages/*` if you use `pub`, so that
 automatically handled dependencies aren't added to the versioning system.
 
