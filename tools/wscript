@@ -20,6 +20,10 @@ def configure(cnf):
     except:
         Logs.warn("Couldn't find dart executable. It isn't necessary, but why don't you have it...?")
     cnf.find_program('dart2js', var='DART2JS')
+    try:
+        cnf.find_program('pub', var='PUB')
+    except:
+        Logs.warn("Couldn't find pub executable. You may have problems with package dependencies.")
     cnf.env['DART_JS_BOOTSTRAP'] = cnf.path.find_node('dart.js').abspath()
 
 @feature('dart')

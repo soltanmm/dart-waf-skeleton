@@ -12,6 +12,6 @@ def build(bld):
             + bld.path.ant_glob('**/*.css')
             + bld.path.ant_glob('**/*.js')
             + bld.path.ant_glob('**/*.yaml'),
-        target='example'
+        target='index'
     )
 
