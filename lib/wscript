@@ -1,0 +1,12 @@
+# vim: syntax=python:shiftwidth=4:tabstop=4:softtabstop=4:expandtab
+
+def options(opt):
+    pass
+def configure(cnf):
+    pass
+    print(cnf.path.abspath())
+    # append this directory to the list of Dart packages (see /tools/wscript)
+    cnf.env.append_value('PACKAGES', [cnf.path.abspath()])
+def build(bld):
+    pass
+

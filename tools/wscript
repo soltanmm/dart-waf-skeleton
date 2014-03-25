@@ -1,9 +1,11 @@
 # vim: syntax=python:shiftwidth=4:tabstop=4:expandtab
 
-import os,sys,types,re,shutil
+import os,sys,types,re,shutil,itertools
 from waflib.TaskGen import feature,after_method,before_method,extension
 from waflib import Task
 from waflib import Logs
+
+warned_unimplemented_package_handling = False
 
 def options(opt):
     pass
@@ -31,6 +33,7 @@ def process_dart(self):
     self.jsfiles = set()
     self.htmlfiles = set()
     self.cssfiles = set()
+    self.otherfiles = set()
     for src in self.source:
         if isinstance(src,str):
             node = self.path.find_node(src)
@@ -44,6 +47,8 @@ def process_dart(self):
             self.htmlfiles.add(node)
         elif node.suffix() == '.css':
             self.cssfiles.add(node)
+        else:
+            self.otherfiles.add(node)
     self.source = []
     self.outdir = self.path.make_node(self.target + '/').get_bld()
     self.outdir.mkdir()
@@ -65,7 +70,7 @@ def apply_dart(self):
     directory.
     """
     shutil.copyfile(self.env['DART_JS_BOOTSTRAP'], self.outdir.make_node('dart.js').abspath())
-    for filetype in ['dartfiles','jsfiles','htmlfiles','cssfiles']:
+    for filetype in ['dartfiles','jsfiles','htmlfiles','cssfiles','otherfiles']:
         files = getattr(self, filetype)
         for f in files:
             if f.is_bld():
@@ -80,15 +85,54 @@ class dart2jstask(Task.Task):
     def run(self):
         bld = self.generator.bld
         env = bld.env
-        bld.exec_command('{dart2js} {i} -o {o}'.format(
-            dart2js=env['DART2JS'],
-            i=self.inputs[0].abspath(),
-            o=self.outputs[0].abspath()
-        ))
-        return 0
+        cmd = [env['DART2JS'],self.inputs[0].abspath(),'-o',self.outputs[0].abspath()]
+        if 'PACKAGES' in env and len(env['PACKAGES']) > 0:
+            pkgs = ['--package-root='+pkgdir for pkgdir in env['PACKAGES']]
+            cmd.extend(pkgs)
+        return bld.exec_command(cmd)
+    def scan(self):
+        deps = [] # node dependencies found
+        raws = [] # raw dependencies not found in path_lst (whatever the hell that means, ask the Waf creator)
+        deps = find_dart_deps(self.inputs[0])
+        return (deps,raws)
+        
 class copytask(Task.Task):
     def run(self):
         i = self.inputs[0]
         for o in self.outputs:
             shutil.copyfile(i.abspath(), o.abspath())
-
+        return 0
+def find_dart_deps(node,exploredset=set()):
+    if node in exploredset:
+        return set()
+    exploredset.add(node)
+    global warned_unimplemented_package_handling
+    import_re_str = r"""^\s*import\s+'(?!dart:)(?P<is_package>package:)?(?P<path>.+)'"""
+    part_re_str = r"""^^\s*part\s+'(?P<path>.+)'"""
+    import_re = re.compile(import_re_str)
+    part_re = re.compile(part_re_str)
+    dep_nodes = set()
+    with open(node.abspath()) as f:
+        for line in f:
+            results_imp = import_re.search(line)
+            results_prt = part_re.search(line)
+            if results_imp is not None:
+                # depri for 'dependency resource... i' (or something)
+                depri = results_imp.group('path')
+                is_package = results_imp.group('is_package') is not None
+            elif results_prt is not None:
+                depri = results_prt.group('path')
+                is_package = False
+            else:
+                continue
+            if is_package and not warned_unimplemented_package_handling:
+                Logs.warn("Handling out-dated package dependencies at build time is unimplemented.")
+                warned_unimplemented_package_handling = True
+                continue
+            else:
+                dep_node = node.find_node('../'+depri)
+                dep_nodes.add(dep_node)
+    dep_nodes_rec = set(dep_nodes)
+    for dep_node in dep_nodes:
+        dep_nodes_rec.update(find_dart_deps(dep_node, exploredset))
+    return dep_nodes_rec
