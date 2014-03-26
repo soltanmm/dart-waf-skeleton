@@ -3,7 +3,7 @@
 use_pub = True
 
 def options(opt):
-    opt.recurse(['tools','packages','src'],mandatory=False)
+    opt.recurse(['tools','packages','web'],mandatory=False)
 
 def configure(cnf):
     cnf.recurse('tools',mandatory=False)
@@ -14,8 +14,8 @@ def configure(cnf):
         cnf.start_msg("Pulling Dart dependencies via pub.")
         cnf.end_msg(cnf.exec_command(cmd) == 0)
     cnf.env.append_value('PACKAGES',cnf.path.find_dir('packages').abspath())
-    cnf.recurse(['packages','src'],mandatory=False)
+    cnf.recurse(['packages','web'],mandatory=False)
 
 def build(bld):
-    bld.recurse(['tools','packages','src'],mandatory=False)
+    bld.recurse(['tools','packages','web'],mandatory=False)
 
