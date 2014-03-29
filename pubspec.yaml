@@ -1,4 +1,4 @@
-name: Example
+name: example
 description: Example
 dependencies:
   yaml: any

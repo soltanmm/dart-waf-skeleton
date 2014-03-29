@@ -1,5 +1,6 @@
 import 'dart:html';
-import 'exlib.dart';
+import 'example_file.dart';
+import 'package:example/examplelib.dart';
 
 void main()
 {
